@@ -20,6 +20,9 @@ def main():
         logging.info(f"Created basic dummy image at {dummy_image}")
         
     digitizer = MedicalServicesDigitizer(db_url="sqlite:///./data/medical_services.db")
+
+    print("OCR runtime status:")
+    print(json.dumps(digitizer.get_ocr_status(), indent=2))
     
     print("Testing digitizer...")
     result = digitizer.process_image(dummy_image)
