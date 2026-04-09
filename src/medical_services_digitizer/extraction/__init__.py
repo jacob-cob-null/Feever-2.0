@@ -1,5 +1,5 @@
-from .chandra_client import ChandraOCRClient
+from .qwen_client import QwenVLClient
 from .validators import Validators
 from .extractor import MedicalServiceExtractor
 
-__all__ = ["ChandraOCRClient", "Validators", "MedicalServiceExtractor"]
+__all__ = ["QwenVLClient", "Validators", "MedicalServiceExtractor"]

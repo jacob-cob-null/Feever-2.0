@@ -13,12 +13,19 @@ class MedicalServicesDigitizer:
     def __init__(self, db_url: str = config.DB_URL):
         self.extractor = MedicalServiceExtractor()
         self.db_manager = DatabaseManager(db_url)
+
+    def get_ocr_status(self) -> Dict:
+        return self.extractor.get_ocr_status()
         
     def process_image(self, image_path: str) -> Dict:
         services = self.extractor.extract_from_image(image_path)
         if services:
             self.db_manager.insert_batch(services)
-        return {"services": services, "count": len(services)}
+        return {
+            "services": services,
+            "count": len(services),
+            "ocr_status": self.get_ocr_status(),
+        }
 
     def process_batch(self, image_paths: List[str], parallel: bool = config.PARALLEL_PROCESSING, max_workers: int = config.MAX_WORKERS) -> Dict:
         results = {"success": 0, "failed": 0, "services": []}

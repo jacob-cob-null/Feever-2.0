@@ -9,7 +9,7 @@ uvicorn[standard]>=0.44.0
 python-multipart>=0.0.24
 
 # Medical Services Digitizer
-chandra-ocr[hf]
+openai>=1.61.0
 sqlalchemy
 python-dotenv
 pydantic
