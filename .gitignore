@@ -1,4 +1,7 @@
 .venv
+.venv311
 .env
 context
 app/__pycache__
+Benchmark_Data/
+src/medical_services_digitizer/__pycache__
