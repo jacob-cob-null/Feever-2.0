@@ -10,7 +10,7 @@ class Config:
     def __init__(self):
         # Qwen 3 VL via Ollama OpenAI-compatible endpoint
         self.OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://127.0.0.1:11434/v1").strip()
-        self.OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3-vl:8b-instruct").strip()
+        self.OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3-vl:8b-instruct-q4_K_M").strip()
         self.OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "ollama").strip()
         self.OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
         self.OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0"))
