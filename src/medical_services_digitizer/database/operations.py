@@ -1,7 +1,8 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .models import Base, MedicalService
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 class DatabaseManager:
     def __init__(self, db_url: str):
@@ -40,3 +41,35 @@ class DatabaseManager:
         with self.SessionLocal() as session:
             count = session.query(MedicalService).count()
             return {"total_records": count}
+
+    def export_standardized_sql(self, output_path: str, services: List[Dict]) -> str:
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        lines = [
+            "DROP TABLE IF EXISTS medical_services;",
+            "",
+            "CREATE TABLE medical_services (",
+            "    service_ID INTEGER PRIMARY KEY,",
+            "    service_Name TEXT NOT NULL,",
+            "    service_Origin TEXT NOT NULL,",
+            "    service_Price DOUBLE PRECISION NOT NULL",
+            ");",
+            "",
+        ]
+
+        for service in services:
+            service_id = int(service["service_ID"])
+            service_name = str(service["service_Name"]).replace("'", "''")
+            service_origin = str(service["service_Origin"]).replace("'", "''")
+            service_price = float(service["service_Price"])
+            lines.append(
+                "INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) "
+                f"VALUES ({service_id}, '{service_name}', '{service_origin}', {service_price});"
+            )
+
+        with open(output_path, "w", encoding="utf-8") as file:
+            file.write("\n".join(lines) + "\n")
+
+        return output_path
