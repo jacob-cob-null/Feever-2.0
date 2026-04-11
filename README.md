@@ -22,3 +22,19 @@ ollama pull qwen3-vl:8b-instruct-q4_K_M
 python examples/basic_usage.py
 
 If Ollama or the model is unavailable, the pipeline falls back to mock mode and logs the exact reason.
+
+## Benchmark Raw Folder to SQL Export
+
+This workflow processes each source folder under `Benchmark_Data/Raw` sequentially,
+supports both images and PDF files, and writes one SQL file per source folder into `Benchmark_Data/SQL`.
+
+Generated SQL schema:
+
+- `service_ID` (globally unique across all generated files)
+- `service_Name`
+- `service_Origin` (source folder name)
+- `service_Price`
+
+Run:
+
+python examples/export_benchmark_sql.py --raw-root ./Benchmark_Data/Raw --sql-dir ./Benchmark_Data/SQL --start-id 1
