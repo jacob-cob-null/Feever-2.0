@@ -177,12 +177,12 @@ class QwenVLClient:
 
     def _extract_with_ollama_backend(self, image_path: str) -> List[Dict]:
         prompt = (
-            "Extract medical service line items from this image and return ONLY strict JSON. "
-            "Expected format: {\"services\":[{\"service_name\":\"...\",\"price\":123.45,"
-            "\"facility\":\"...\",\"category\":\"...\",\"currency\":\"PHP\","
-            "\"description\":\"...\"}]}. "
+            "You are an expert data extractor. Extract medical service line items (such as procedures, tests, or treatments) from this document image. "
+            "You MUST return the data as a strict JSON object with a single root key 'services'. "
+            "The 'services' key must contain an array of objects. Each object must have the following keys: "
+            "'service_name' (string), 'price' (number), 'facility' (string), 'category' (string), 'currency' (string, default 'PHP'), 'description' (string). "
             "If no medical service items are present, return {\"services\":[]}. "
-            "Do not wrap JSON in markdown or add extra text."
+            "Do not include any Markdown formatting, fences, conversational text, or explanations. Just output the raw JSON object."
         )
 
         mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
@@ -204,7 +204,8 @@ class QwenVLClient:
                 }
             ],
             temperature=self.temperature,
-            max_tokens=1024,
+            max_tokens=8192,
+            response_format={"type": "json_object"},
         )
 
         raw_content = response.choices[0].message.content

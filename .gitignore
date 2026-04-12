@@ -3,5 +3,6 @@
 .env
 context
 app/__pycache__
-Benchmark_Data/
+Benchmark_Data/Raw
 src/medical_services_digitizer/__pycache__
+Benchmark_Data/reference
