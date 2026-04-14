@@ -1,0 +1,41 @@
+{
+  "generated_at_utc": "2026-04-12T12:31:52.540278+00:00",
+  "dataset_root": "C:/Users/Jacob/Documents/Feever_2.0",
+  "totals": {
+    "records": 2797,
+    "missing_images": 0,
+    "files": 3
+  },
+  "by_dataset": {
+    "cord_v2": 1600,
+    "invoices_donut_v1": 850,
+    "sroie_2019_v2": 347
+  },
+  "by_split": {
+    "test": 347,
+    "train": 2450
+  },
+  "files": [
+    {
+      "path": "Datasets/Training_Data/golden/merged/all_sources_test.jsonl",
+      "sha256": "03c42b101085145fa17a62a025df985c39546bddf987d2335dae8e5e14cc4669",
+      "records": 347,
+      "missing_images": 0,
+      "missing_image_examples": []
+    },
+    {
+      "path": "Datasets/Training_Data/golden/merged/all_sources_train.jsonl",
+      "sha256": "f5b91edafb718747dab1933de18cefb32735f49c32786d3b34b5cd73b4fc521c",
+      "records": 1225,
+      "missing_images": 0,
+      "missing_image_examples": []
+    },
+    {
+      "path": "Datasets/Training_Data/golden/merged/all_sources_train_val.jsonl",
+      "sha256": "f5b91edafb718747dab1933de18cefb32735f49c32786d3b34b5cd73b4fc521c",
+      "records": 1225,
+      "missing_images": 0,
+      "missing_image_examples": []
+    }
+  ]
+}

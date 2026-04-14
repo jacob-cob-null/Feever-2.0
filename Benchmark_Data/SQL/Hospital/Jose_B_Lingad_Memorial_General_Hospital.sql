@@ -1,12 +1,3 @@
-DROP TABLE IF EXISTS medical_services;
-
-CREATE TABLE medical_services (
-    service_ID INTEGER PRIMARY KEY,
-    service_Name TEXT NOT NULL,
-    service_Origin TEXT NOT NULL,
-    service_Price DOUBLE PRECISION NOT NULL
-);
-
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (455, 'PT BASIC', 'Dr. Andres M. Luciano District Hospital', 200.00);
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (456, 'PT SPECIAL', 'Dr. Andres M. Luciano District Hospital', 250.00);
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (457, 'PHYSICAL THERAPY BODY CONDITIONING', 'Dr. Andres M. Luciano District Hospital', 50.00);
