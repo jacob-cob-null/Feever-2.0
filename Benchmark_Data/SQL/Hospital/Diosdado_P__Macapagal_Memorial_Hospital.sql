@@ -1,12 +1,3 @@
-DROP TABLE IF EXISTS medical_services;
-
-CREATE TABLE medical_services (
-    service_ID INTEGER PRIMARY KEY,
-    service_Name TEXT NOT NULL,
-    service_Origin TEXT NOT NULL,
-    service_Price DOUBLE PRECISION NOT NULL
-);
-
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (1, 'COMPLETE BLOOD COUNT W/ PLATELET CT.', 'Diosdado P. Macapagal Memorial Hospital', 250.0);
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (2, 'HEMOGLOBIN', 'Diosdado P. Macapagal Memorial Hospital', 100.0);
 INSERT INTO medical_services (service_ID, service_Name, service_Origin, service_Price) VALUES (3, 'HEMATOCRIT', 'Diosdado P. Macapagal Memorial Hospital', 100.0);
