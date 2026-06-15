@@ -25,7 +25,8 @@
       "Bash(curl:*)",
       "Bash(python:*)",
       "Bash(pip show:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(git push:*)"
     ]
   }
 }
