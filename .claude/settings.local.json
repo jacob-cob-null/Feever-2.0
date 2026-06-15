@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0 -not -path */.venv/* -not -path */.git/* -not -path */.* -type f)",
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0 -name *paige* -o -name *ablation*)",
+      "Bash(grep -E \"\\\\.bin$|\\\\.safetensors$|adapter_config|adapter\\\\.json\")",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(grep -E \"\\\\.bin$|\\\\.safetensors$|adapter|config\\\\.json|pytorch_model\")",
+      "Bash(grep -E \"\\\\.json$|\\\\.yaml$|\\\\.txt$|\\\\.md$\")",
+      "Bash(grep -v \"\\\\.png$\\\\|\\\\.jpeg$\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -E \"\\\\.yaml$|\\\\.yml$|\\\\.json$\")",
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0 -name *.safetensors -o -name *.bin)",
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0 -not -path */.venv/* -not -path */__pycache__/* -name checkpoint* -o -name output* -type d)",
+      "Bash(find /c/Users/Jacob -maxdepth 6 -name *.safetensors)",
+      "Bash(find /c/Users/Jacob -maxdepth 10 -name run_ablation*)",
+      "Bash(find /c/Users/Jacob -maxdepth 5 -name *.ipynb)",
+      "Bash(find /c/Users/Jacob -maxdepth 8 -name checkpoint-* -type d)",
+      "Bash(find /d /e /f /g 2)",
+      "Bash(/dev/null -maxdepth 3 -name checkpoint-* -type d)",
+      "Read(//d//**)",
+      "Read(//e//**)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)"
+    ]
+  }
+}
