@@ -1,16 +1,15 @@
-# Core dataset processing
-# Used by Datasets/Training_Data/raw_data.py
-datasets>=4.8.4
-pillow>=11.3.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
 
-# API runtime (ready for FastAPI work)
-fastapi>=0.135.3
-uvicorn[standard]>=0.44.0
-python-multipart>=0.0.24
+torch>=2.3.0
+transformers>=4.45.0
+peft>=0.12.0
+safetensors>=0.4.0
+accelerate>=0.33.0
+bitsandbytes>=0.43.0
 
-# Medical Services Digitizer
-openai>=1.61.0
-sqlalchemy
-python-dotenv
-pydantic
-pymupdf>=1.24.0
+Pillow>=10.4.0
+cryptography>=43.0.0
+python-dotenv>=1.0.0
+pydantic>=2.8.0
