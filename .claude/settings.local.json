@@ -22,7 +22,10 @@
       "Read(//e//**)",
       "WebFetch(domain:github.com)",
       "Bash(gh api:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)"
     ]
   }
 }
