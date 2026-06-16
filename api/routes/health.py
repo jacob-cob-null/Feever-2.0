@@ -35,7 +35,7 @@ def set_subsystem_info(
     _encryption_ok = encryption_ok
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get("/health", response_model=HealthResponse, response_model_exclude_none=True)
 async def health() -> HealthResponse:
     # Model
     if manager.is_loaded:

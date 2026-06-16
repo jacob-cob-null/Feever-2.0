@@ -4,12 +4,17 @@ import logging
 import os
 import sys
 import time
+import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from api.core.exceptions import FeeverError
 
 load_dotenv()
 
@@ -143,3 +148,44 @@ from api.routes.health import router as health_router
 
 app.include_router(health_router)
 app.include_router(analyze_router)
+
+
+# --- Global exception handlers ---
+
+@app.exception_handler(FeeverError)
+async def feever_error_handler(request: Request, exc: FeeverError):
+    """Structured JSON response for all Fee-Ver application errors."""
+    request_id = getattr(request.state, "request_id", None) or str(uuid.uuid4())
+    logger.error(
+        "request_id=%s | error_type=%s | detail=%s",
+        request_id, exc.error_type, exc.detail,
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": True,
+            "request_id": request_id,
+            "status_code": exc.status_code,
+            "error_type": exc.error_type,
+            "detail": exc.detail,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(request: Request, exc: Exception):
+    """Catch-all for unexpected errors — never leak stack traces."""
+    request_id = getattr(request.state, "request_id", None) or str(uuid.uuid4())
+    logger.exception("request_id=%s | unhandled_error | %s", request_id, exc)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": True,
+            "request_id": request_id,
+            "status_code": 500,
+            "error_type": "internal_error",
+            "detail": "An unexpected error occurred",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )

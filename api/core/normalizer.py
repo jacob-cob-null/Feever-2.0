@@ -2,12 +2,17 @@
 
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 CANVAS_SIZE = 1024
 PAD_COLOR = (245, 245, 245)
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+class InvalidImageError(Exception):
+    """Raised when an image file is corrupted or unreadable."""
+    pass
 
 
 def validate_image(content_type: str, size: int) -> str | None:
@@ -29,8 +34,17 @@ def normalize(image_bytes: bytes) -> Image.Image:
         1. Open and convert to RGB.
         2. Thumbnail to fit 1024x1024 (LANCZOS, preserves aspect ratio).
         3. Center-paste onto 1024x1024 canvas with pad color (245,245,245).
+
+    Raises:
+        InvalidImageError: If the image file is corrupted or unreadable.
     """
-    img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    try:
+        img = Image.open(BytesIO(image_bytes)).convert("RGB")
+    except (UnidentifiedImageError, OSError, SyntaxError) as e:
+        raise InvalidImageError(
+            f"Image file is corrupted or unreadable: {type(e).__name__}"
+        ) from e
+
     img.thumbnail((CANVAS_SIZE, CANVAS_SIZE), Image.LANCZOS)
     canvas = Image.new("RGB", (CANVAS_SIZE, CANVAS_SIZE), PAD_COLOR)
     x = (CANVAS_SIZE - img.width) // 2
