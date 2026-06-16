@@ -67,8 +67,8 @@ async def analyze(
         try:
             raw_ocr = manager.run_inference(pil_image)
         except Exception as e:
-            logger.error("Inference failed: %s", e)
-            raise HTTPException(status_code=500, detail=f"Inference error: {e}")
+            logger.exception("Inference failed")
+            raise HTTPException(status_code=500, detail=f"Inference error: {type(e).__name__}: {e}")
     finally:
         # 5 + 6. Flush CUDA and release lock (always)
         manager._flush_cuda()

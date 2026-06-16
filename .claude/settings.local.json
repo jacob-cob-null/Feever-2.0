@@ -26,7 +26,27 @@
       "Bash(python:*)",
       "Bash(pip show:*)",
       "Bash(pip install:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(conda env:*)",
+      "Read(//c/Users/Jacob/miniconda3/envs/paige/**)",
+      "Read(//c/Users/Jacob/anaconda3/envs/paige/**)",
+      "Read(//c/ProgramData/miniconda3/envs/paige/**)",
+      "Read(//c/Users/Jacob/**)",
+      "Bash(C:/Users/Jacob/Documents/Feever_2.0/.venv311/Scripts/pip.exe show:*)",
+      "Bash(C:/Users/Jacob/Documents/Feever_2.0/.venv311/Scripts/python.exe -c \"import torch; print\\(torch.__version__\\); print\\(torch.cuda.is_available\\(\\)\\); print\\(torch.version.cuda\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLForConditionalGeneration; print\\('Qwen3VLForConditionalGeneration: OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from transformers import AutoModelForImageTextToText; print\\('AutoModelForImageTextToText: OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from transformers import Qwen3VLForConditionalGeneration, Qwen3VLProcessor; print\\('Direct imports: OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"import json; cfg = json.load\\(open\\('models/merged/qwen3vl_merged/adapter_config.json'\\)\\); print\\('base_model:', cfg['base_model_name_or_path']\\); print\\('model_class:', cfg.get\\('auto_mapping', {}\\).get\\('base_model_class'\\)\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.core.model import manager; print\\('model.py imports OK, manager created'\\)\" 2>&1)",
+      "Bash(TORCHDYNAMO_DISABLE=1 KMP_DUPLICATE_LIB_OK=TRUE .venv311/Scripts/python.exe -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -m json.tool)",
+      "Bash(.venv311/Scripts/python.exe -c \"import torch; props = torch.cuda.get_device_properties\\(0\\); print\\([a for a in dir\\(props\\) if 'mem' in a.lower\\(\\) or 'total' in a.lower\\(\\)]\\)\" 2>&1)",
+      "Bash(taskkill //F //IM \"python.exe\" //FI \"WINDOWTITLE eq *uvicorn*\")",
+      "Bash(TORCHDYNAMO_DISABLE=1 KMP_DUPLICATE_LIB_OK=TRUE .venv311/Scripts/python.exe -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill:*)",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -1,6 +1,7 @@
 """Model loader, inference lock, and CUDA management.
 
-Loads the 4-bit BnB base model + composed LoRA adapter.
+Loads the pre-quantized 4-bit BnB base model + composed LoRA adapter.
+Pinned to transformers==5.5.0 to match training environment.
 Runtime VRAM: ~2.5 GB base + ~0.26 GB adapter + ~1.5 GB overhead = ~4.3 GB.
 """
 
@@ -9,10 +10,11 @@ import logging
 import threading
 from pathlib import Path
 
+import bitsandbytes as bnb
 import torch
 from PIL import Image
 from peft import PeftModel
-from transformers import AutoModelForImageTextToText, AutoProcessor, BitsAndBytesConfig
+from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,6 @@ class ModelManager:
 
     @property
     def lock_held(self) -> bool:
-        # Try to acquire without blocking; if we can't, it's held
         if self.lock.acquire(blocking=False):
             self.lock.release()
             return False
@@ -60,32 +61,64 @@ class ModelManager:
             adapter_cfg = json.load(f)
 
         base_model_id = adapter_cfg["base_model_name_or_path"]
-        logger.info("Loading base model: %s", base_model_id)
-
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_use_double_quant=True,
-        )
-
-        base_model = AutoModelForImageTextToText.from_pretrained(
+        has_cuda = torch.cuda.is_available()
+        logger.info(
+            "Loading base model: %s (CUDA: %s%s)",
             base_model_id,
-            quantization_config=bnb_config,
-            device_map="auto",
-            torch_dtype=torch.float16,
+            has_cuda,
+            f" - {torch.cuda.get_device_name(0)}" if has_cuda else "",
         )
+
+        # The base model is already pre-quantized in 4-bit BnB by unsloth.
+        # Do NOT pass quantization_config or torch_dtype — just load it directly.
+        # Use the exact class from adapter_config.json auto_mapping.
+        base_model = Qwen3VLForConditionalGeneration.from_pretrained(
+            base_model_id,
+            device_map={"": 0} if has_cuda else "cpu",
+        )
+
+        # The unsloth pre-quantized model wraps 6 vision encoder deepstack
+        # merger layers as Linear4bit without actual quant_state. BnB asserts
+        # on these during forward. Replace them with plain Linear (weights are
+        # already float16, no dequantization needed).
+        replaced = 0
+        for name, module in list(base_model.named_modules()):
+            if not isinstance(module, bnb.nn.Linear4bit):
+                continue
+            if not name.startswith("model.visual"):
+                continue
+            parts = name.split(".")
+            parent = base_model
+            for p in parts[:-1]:
+                parent = getattr(parent, p)
+            w = module.weight.data.to(dtype=torch.bfloat16)
+            new_linear = torch.nn.Linear(
+                w.shape[1], w.shape[0],
+                bias=module.bias is not None,
+                device=w.device,
+                dtype=torch.bfloat16,
+            )
+            new_linear.weight = torch.nn.Parameter(w, requires_grad=False)
+            if module.bias is not None:
+                new_linear.bias = torch.nn.Parameter(
+                    module.bias.data.to(dtype=torch.bfloat16), requires_grad=False
+                )
+            setattr(parent, parts[-1], new_linear)
+            replaced += 1
+        if replaced:
+            logger.info("Replaced %d vision encoder Linear4bit -> Linear", replaced)
 
         logger.info("Loading LoRA adapter from: %s", adapter_path)
         self.model = PeftModel.from_pretrained(
             base_model,
             str(adapter_path),
             is_trainable=False,
+            autocast_adapter_dtype=False,
         )
         self.model.eval()
 
         self.processor = AutoProcessor.from_pretrained(
-            str(adapter_path),
+            base_model_id,
             trust_remote_code=True,
         )
 
@@ -108,10 +141,7 @@ class ModelManager:
         logger.info("Warmup complete")
 
     def run_inference(self, pil_image: Image.Image, max_new_tokens: int = 512) -> dict:
-        """Run OCR inference on a PIL image. Returns parsed JSON dict.
-
-        Caller must hold self.lock before calling this.
-        """
+        """Run OCR inference on a PIL image. Returns parsed JSON dict."""
         if not self._loaded:
             raise RuntimeError("Model not loaded")
 
@@ -145,7 +175,6 @@ class ModelManager:
                 top_p=None,
             )
 
-        # Decode only the generated tokens (skip input)
         generated = output_ids[0][inputs["input_ids"].shape[1]:]
         raw_text = self.processor.decode(generated, skip_special_tokens=True)
 
@@ -157,7 +186,7 @@ class ModelManager:
             return 0, 0
         idx = self.device.index if self.device.index is not None else 0
         used = torch.cuda.memory_allocated(idx) // (1024 * 1024)
-        total = torch.cuda.get_device_properties(idx).total_mem // (1024 * 1024)
+        total = torch.cuda.get_device_properties(idx).total_memory // (1024 * 1024)
         return used, total
 
     def _flush_cuda(self) -> None:
@@ -169,7 +198,6 @@ class ModelManager:
         """Extract JSON from model output, handling markdown fences."""
         text = raw.strip()
         if text.startswith("```"):
-            # Strip ```json ... ``` fences
             lines = text.split("\n")
             lines = [l for l in lines if not l.strip().startswith("```")]
             text = "\n".join(lines)
