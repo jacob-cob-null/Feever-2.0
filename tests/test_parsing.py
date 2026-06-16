@@ -88,6 +88,7 @@ class TestTier3RegexExtraction:
 
     def test_all_fields_recoverable(self, parser):
         text = (
+            '"hospital_name": "Test Hospital", '
             '"date": "2026-01-15", "patient_name": "Test", '
             '"philhealth_number": "12-345678901-2", '
             '"diagnosis_code": "N20.9", "procedure_code": "36100", '
@@ -96,7 +97,8 @@ class TestTier3RegexExtraction:
         )
         result, tier = parser(text)
         assert tier == 3
-        assert len(result) == 8
+        assert len(result) == 9
+        assert result["hospital_name"] == "Test Hospital"
 
 
 class TestParseFailure:
