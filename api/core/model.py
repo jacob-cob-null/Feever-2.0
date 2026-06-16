@@ -7,6 +7,7 @@ Runtime VRAM: ~2.5 GB base + ~0.26 GB adapter + ~1.5 GB overhead = ~4.3 GB.
 
 import json
 import logging
+import re
 import threading
 from pathlib import Path
 
@@ -140,8 +141,15 @@ class ModelManager:
             self._flush_cuda()
         logger.info("Warmup complete")
 
-    def run_inference(self, pil_image: Image.Image, max_new_tokens: int = 512) -> dict:
-        """Run OCR inference on a PIL image. Returns parsed JSON dict."""
+    def run_inference(
+        self, pil_image: Image.Image, max_new_tokens: int = 512
+    ) -> tuple[dict, str, int]:
+        """Run OCR inference on a PIL image.
+
+        Returns:
+            (parsed_dict, raw_text, parse_tier)
+            parse_tier: 1 = clean JSON, 2 = repaired, 3 = partial regex extraction
+        """
         if not self._loaded:
             raise RuntimeError("Model not loaded")
 
@@ -178,7 +186,8 @@ class ModelManager:
         generated = output_ids[0][inputs["input_ids"].shape[1]:]
         raw_text = self.processor.decode(generated, skip_special_tokens=True)
 
-        return self._parse_output(raw_text)
+        parsed, tier = self._parse_output(raw_text)
+        return parsed, raw_text, tier
 
     def get_vram_info(self) -> tuple[int, int]:
         """Return (used_mb, total_mb) for the model's CUDA device."""
@@ -194,14 +203,82 @@ class ModelManager:
             torch.cuda.empty_cache()
 
     @staticmethod
-    def _parse_output(raw: str) -> dict:
-        """Extract JSON from model output, handling markdown fences."""
+    def _parse_output(raw: str) -> tuple[dict, int]:
+        """3-tier JSON extraction from model output.
+
+        Tier 1: Clean JSON parse.
+        Tier 2: Strip markdown fences, trailing commas, extract JSON
+                substring from surrounding text.
+        Tier 3: Regex-extract individual fields from malformed output.
+
+        Returns:
+            (parsed_dict, tier)
+        """
         text = raw.strip()
-        if text.startswith("```"):
-            lines = text.split("\n")
+
+        # --- Tier 1: clean parse ---
+        try:
+            return json.loads(text), 1
+        except json.JSONDecodeError:
+            pass
+
+        # --- Tier 2: repair and retry ---
+        repaired = text
+
+        # Strip markdown fences
+        if "```" in repaired:
+            lines = repaired.split("\n")
             lines = [l for l in lines if not l.strip().startswith("```")]
-            text = "\n".join(lines)
-        return json.loads(text)
+            repaired = "\n".join(lines).strip()
+
+        # Extract first { ... } substring (model may wrap JSON in explanation)
+        brace_match = re.search(r"\{[\s\S]*\}", repaired)
+        if brace_match:
+            repaired = brace_match.group(0)
+
+        # Strip trailing commas before } or ]
+        repaired = re.sub(r",\s*([}\]])", r"\1", repaired)
+
+        try:
+            return json.loads(repaired), 2
+        except json.JSONDecodeError:
+            pass
+
+        # --- Tier 3: regex field extraction ---
+        FIELDS = [
+            "date", "patient_name", "philhealth_number",
+            "diagnosis_code", "procedure_code", "total_amount",
+            "philhealth_benefit", "balance_due",
+        ]
+        result = {}
+        for field in FIELDS:
+            # Match "field": "value" or "field": number or "field": null
+            pattern = rf'"{field}"\s*:\s*("(?:[^"\\]|\\.)*"|[\d.]+|null)'
+            m = re.search(pattern, text, re.IGNORECASE)
+            if m:
+                val = m.group(1)
+                if val == "null":
+                    result[field] = None
+                elif val.startswith('"'):
+                    result[field] = val.strip('"')
+                else:
+                    try:
+                        result[field] = float(val)
+                    except ValueError:
+                        result[field] = val
+
+        if result:
+            logger.warning(
+                "Tier-3 partial extraction recovered %d/%d fields",
+                len(result), len(FIELDS),
+            )
+            return result, 3
+
+        # Nothing recoverable
+        raise ValueError(
+            f"Could not extract structured data from model output "
+            f"(length={len(text)})"
+        )
 
 
 # Module-level singleton

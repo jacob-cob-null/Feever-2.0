@@ -46,7 +46,18 @@
       "Bash(TORCHDYNAMO_DISABLE=1 KMP_DUPLICATE_LIB_OK=TRUE .venv311/Scripts/python.exe -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1)",
       "Bash(netstat -ano)",
       "Bash(taskkill:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0/models -type f -name *.json -o -name *.sqlite)",
+      "Bash(find /c/Users/Jacob/Documents/Feever_2.0 -maxdepth 2 -type f -name *.json -o -name *.yaml -o -name *.yml -o -name *.toml -o -name *.cfg)",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.schemas.response import AnalyzeResponse, OcrResult, ConfidenceField, PhilhealthMatch, HospitalDbMatch, Discrepancy, Summary, ProcessingInfo, ErrorResponse, HealthResponse, SubsystemStatus, RuleEngineResult, LineItem; print\\('All schema imports OK'\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.core.rule_engine import RuleEngine; print\\(''rule_engine OK''\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.routes.health import router; print\\(''health OK''\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.routes.analyze import router; print\\('analyze OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.core.model import ModelManager; m = ModelManager\\(\\); print\\('Tier 1:', m._parse_output\\('{\\\\\"date\\\\\": \\\\\"2026-01-15\\\\\", \\\\\"total_amount\\\\\": 193}'\\)\\); print\\('Tier 2:', m._parse_output\\('\\\\`\\\\`\\\\`json\\\\n{\\\\\"date\\\\\": \\\\\"2026-01-15\\\\\",}\\\\n\\\\`\\\\`\\\\`'\\)\\); print\\('Tier 3:', m._parse_output\\('Here is the data: \\\\\"date\\\\\": \\\\\"2026-01-15\\\\\" and \\\\\"total_amount\\\\\": 193 done'\\)\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"\nfrom api.core.normalizer import normalize, InvalidImageError\ntry:\n    normalize\\(b'not an image at all'\\)\nexcept InvalidImageError as e:\n    print\\('Caught:', e\\)\n\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.routes.analyze import router; print\\('analyze.py imports OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.main import app; print\\('main.py imports OK'\\)\" 2>&1)"
     ]
   }
 }
