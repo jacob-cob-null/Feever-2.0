@@ -1,17 +1,25 @@
 """POST /analyze — full inference + rule engine pipeline (Phase 4 HITL)."""
 
 import logging
+import os
 import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 
 from api.core.confidence import assess_confidence
 from api.core.encryption import encrypt_and_save
+from api.core.exceptions import (
+    ExtractionError,
+    InferenceBusyError,
+    InferenceTimeoutError,
+    InvalidImageError,
+)
 from api.core.model import manager
-from api.core.normalizer import InvalidImageError, normalize, validate_image
+from api.core.normalizer import InvalidImageError as NormalizerImageError
+from api.core.normalizer import normalize, validate_image
 from api.schemas.response import (
     AnalyzeResponse,
     ConfidenceField,
@@ -63,55 +71,58 @@ async def analyze(
         request_id, image.content_type, image.size, permission_to_record,
     )
 
+    # Inference timeout budget (seconds), configurable via env
+    inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "30"))
+
     # 1. Validate request
     image_bytes = await image.read()
     error = validate_image(image.content_type, len(image_bytes))
     if error:
-        raise HTTPException(status_code=400, detail=error)
+        raise InvalidImageError(error)
 
     # 2. Acquire inference lock
     acquired = manager.lock.acquire(blocking=False)
     if not acquired:
-        raise HTTPException(
-            status_code=503,
-            detail="Inference engine busy. Try again shortly.",
-        )
+        raise InferenceBusyError()
 
     try:
         # 3. Normalize image
         t_norm = time.perf_counter()
         try:
             pil_image = normalize(image_bytes)
-        except InvalidImageError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+        except NormalizerImageError as e:
+            raise InvalidImageError(str(e))
         norm_ms = int((time.perf_counter() - t_norm) * 1000)
         logger.info("request_id=%s | stage=normalized | elapsed_ms=%d", request_id, norm_ms)
 
-        # 4. Run inference
+        # 4. Run inference with timeout check
         t_infer = time.perf_counter()
         try:
             raw_ocr, raw_text, parse_tier = manager.run_inference(pil_image)
         except ValueError as e:
-            # All 3 parse tiers failed
-            logger.error(
-                "request_id=%s | stage=inference | error=extraction_failed | detail=%s",
-                request_id, e,
-            )
-            raise HTTPException(
-                status_code=422,
-                detail="Could not extract structured data from document",
+            raise ExtractionError(
+                "Could not extract structured data from document"
             )
         except Exception as e:
             logger.exception("request_id=%s | stage=inference | error=%s", request_id, type(e).__name__)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Inference error: {type(e).__name__}: {e}",
-            )
+            raise
+
         infer_ms = int((time.perf_counter() - t_infer) * 1000)
         logger.info(
             "request_id=%s | stage=inference_done | elapsed_ms=%d | parse_tier=%d",
             request_id, infer_ms, parse_tier,
         )
+
+        # Check if inference exceeded timeout budget
+        if infer_ms > inference_timeout * 1000:
+            logger.warning(
+                "request_id=%s | inference exceeded timeout budget: %dms > %ds",
+                request_id, infer_ms, inference_timeout,
+            )
+            extraction_notes.append(
+                f"Inference took {infer_ms}ms, exceeding the {inference_timeout}s budget — "
+                f"results may be incomplete"
+            )
     finally:
         # 5 + 6. Flush CUDA and release lock (always)
         manager._flush_cuda()

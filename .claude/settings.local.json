@@ -57,7 +57,15 @@
       "Bash(.venv311/Scripts/python.exe -c \"from api.core.model import ModelManager; m = ModelManager\\(\\); print\\('Tier 1:', m._parse_output\\('{\\\\\"date\\\\\": \\\\\"2026-01-15\\\\\", \\\\\"total_amount\\\\\": 193}'\\)\\); print\\('Tier 2:', m._parse_output\\('\\\\`\\\\`\\\\`json\\\\n{\\\\\"date\\\\\": \\\\\"2026-01-15\\\\\",}\\\\n\\\\`\\\\`\\\\`'\\)\\); print\\('Tier 3:', m._parse_output\\('Here is the data: \\\\\"date\\\\\": \\\\\"2026-01-15\\\\\" and \\\\\"total_amount\\\\\": 193 done'\\)\\)\")",
       "Bash(.venv311/Scripts/python.exe -c \"\nfrom api.core.normalizer import normalize, InvalidImageError\ntry:\n    normalize\\(b'not an image at all'\\)\nexcept InvalidImageError as e:\n    print\\('Caught:', e\\)\n\")",
       "Bash(.venv311/Scripts/python.exe -c \"from api.routes.analyze import router; print\\('analyze.py imports OK'\\)\" 2>&1)",
-      "Bash(.venv311/Scripts/python.exe -c \"from api.main import app; print\\('main.py imports OK'\\)\" 2>&1)"
+      "Bash(.venv311/Scripts/python.exe -c \"from api.main import app; print\\('main.py imports OK'\\)\" 2>&1)",
+      "Bash(git rm:*)",
+      "Bash(.venv311/Scripts/python.exe -c \"\nimport sqlite3\nconn = sqlite3.connect\\('file:models/reserved/hospital_db.sqlite?mode=ro', uri=True\\)\nrows = conn.execute\\('SELECT service_ID, service_Name, service_Price, service_Origin FROM medical_services LIMIT 3'\\).fetchall\\(\\)\nfor r in rows: print\\(r\\)\nconn.close\\(\\)\n\")",
+      "Bash(.venv311/Scripts/python.exe -c \"\nimport json\nwith open\\('models/reserved/philhealth_annex_a.json'\\) as f:\n    data = json.load\\(f\\)\nprint\\('Annex A sample:', json.dumps\\(data[0], indent=2\\)\\)\nwith open\\('models/reserved/philhealth_annex_b.json'\\) as f:\n    data = json.load\\(f\\)\nprint\\('Annex B sample:', json.dumps\\(data[0], indent=2\\)\\)\n\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.core.rule_engine import RuleEngine; print\\('rule_engine imports OK'\\)\" 2>&1)",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.core.exceptions import FeeverError, InvalidImageError, ExtractionError, InferenceTimeoutError, InferenceBusyError, ModelNotReadyError; print\\(''exceptions OK''\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.routes.analyze import router; print\\(''analyze OK''\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"from api.main import app; print\\(''main OK''\\)\")",
+      "Bash(.venv311/Scripts/python.exe -c \"\nfrom api.core.exceptions import InvalidImageError, InferenceBusyError, ExtractionError\n\ne1 = InvalidImageError\\('File is corrupted'\\)\nprint\\(f'{e1.error_type}: {e1.status_code} - {e1.detail}'\\)\n\ne2 = InferenceBusyError\\(\\)\nprint\\(f'{e2.error_type}: {e2.status_code} - {e2.detail}'\\)\n\ne3 = ExtractionError\\('Could not parse JSON'\\)\nprint\\(f'{e3.error_type}: {e3.status_code} - {e3.detail}'\\)\n\")"
     ]
   }
 }
