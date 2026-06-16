@@ -1,0 +1,35 @@
+# Virtual environments
+.venv/
+.venv311/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitattributes
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Local data (encrypted records, benchmarks)
+data/records/
+Benchmark_Data/
+context/
+
+# Claude Code
+.claude/
+
+# Environment secrets (bind-mounted at runtime)
+.env
+
+# Model weights (volume-mounted at runtime)
+models/merged/
+models/reserved/adapters/
+
+# Datasets (training data, not needed at runtime)
+Datasets/

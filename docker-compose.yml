@@ -1,0 +1,22 @@
+services:
+  feever:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Model weights — too large to bake into image
+      - ./models/merged/qwen3vl_merged:/app/models/merged/qwen3vl_merged:ro
+      # LoRA adapters (base adapters used during merge_and_unload)
+      - ./models/reserved/adapters:/app/models/reserved/adapters:ro
+      # Encrypted records persist on host
+      - ./data/records:/app/data/records
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
