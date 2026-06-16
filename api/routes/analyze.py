@@ -18,6 +18,7 @@ from api.core.exceptions import (
     InvalidImageError,
 )
 from api.core.model import manager
+from api.core.postprocess import cross_validate, normalize_amount, normalize_date
 from api.core.normalizer import InvalidImageError as NormalizerImageError
 from api.core.normalizer import normalize, validate_image
 from api.schemas.response import (
@@ -72,7 +73,7 @@ async def analyze(
     )
 
     # Inference timeout budget (seconds), configurable via env
-    inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "30"))
+    inference_timeout = int(os.getenv("INFERENCE_TIMEOUT", "120"))
 
     # 1. Validate request
     image_bytes = await image.read()
@@ -243,12 +244,29 @@ async def analyze(
 
 
 def _build_ocr_result(raw: dict) -> tuple[OcrResult, list[str]]:
-    """Map raw model output (8-field schema) to OcrResult with confidence.
+    """Map raw model output to OcrResult with confidence and post-processing.
 
     Returns:
         (ocr_result, extraction_notes)
     """
     notes: list[str] = []
+
+    # --- Post-processing: normalize dates and amounts ---
+    raw_date = raw.get("date")
+    normalized_date = normalize_date(raw_date)
+    if raw_date and normalized_date != raw_date:
+        notes.append(f"Date normalized: '{raw_date}' → '{normalized_date}'")
+
+    # Normalize amount fields
+    for amount_field in ("total_amount", "philhealth_benefit", "balance_due", "tax_amount"):
+        raw_val = raw.get(amount_field)
+        if raw_val is not None:
+            cleaned = normalize_amount(raw_val)
+            if cleaned is not None:
+                raw[amount_field] = cleaned
+
+    # Cross-validate extracted fields
+    cross_validate(raw, notes)
 
     def _cf(field: str, value) -> ConfidenceField:
         return ConfidenceField(
@@ -259,7 +277,7 @@ def _build_ocr_result(raw: dict) -> tuple[OcrResult, list[str]]:
     # Build confidence-wrapped fields
     hospital_name = _cf("hospital_name", raw.get("hospital_name"))
     patient_name = _cf("patient_name", raw.get("patient_name"))
-    billing_date = _cf("date", raw.get("date"))
+    billing_date = _cf("date", normalized_date)
     total_amount = _cf("total_amount", raw.get("total_amount"))
     tax_amount = _cf("tax_amount", raw.get("tax_amount"))
     philhealth_number = _cf("philhealth_number", raw.get("philhealth_number"))
@@ -283,22 +301,43 @@ def _build_ocr_result(raw: dict) -> tuple[OcrResult, list[str]]:
             "procedure_code was not extracted — PhilHealth Annex B code matching was skipped"
         )
 
-    # Build line items — tag summary fields
+    # Build line items from model-extracted line_items (if present)
     line_items = []
+    model_line_items = raw.get("line_items")
+    if isinstance(model_line_items, list) and len(model_line_items) > 0:
+        for li in model_line_items:
+            if not isinstance(li, dict):
+                continue
+            desc = str(li.get("description", "")).strip()
+            if not desc:
+                continue
+            price = normalize_amount(li.get("amount") or li.get("price"))
+            is_summary = desc.lower() in SUMMARY_FIELD_LABELS
+            line_items.append(
+                LineItem(
+                    description=desc,
+                    quantity=li.get("quantity", 1),
+                    price=price,
+                    is_summary=is_summary,
+                )
+            )
+
+    # Always add summary fields (from header-level extraction) if not already
+    # present in model-extracted line items
+    existing_descs = {li.description.lower() for li in line_items}
     summary_fields = [
         ("Total Amount", raw.get("total_amount")),
         ("PhilHealth Benefit", raw.get("philhealth_benefit")),
         ("Balance Due", raw.get("balance_due")),
     ]
     for desc, val in summary_fields:
-        if val is not None:
-            is_summary = desc.lower() in SUMMARY_FIELD_LABELS
+        if val is not None and desc.lower() not in existing_descs:
             line_items.append(
                 LineItem(
                     description=desc,
                     quantity=1,
                     price=_to_float(val),
-                    is_summary=is_summary,
+                    is_summary=True,
                 )
             )
 

@@ -35,6 +35,10 @@ def normalize(image_bytes: bytes) -> Image.Image:
         2. Thumbnail to fit 1024x1024 (LANCZOS, preserves aspect ratio).
         3. Center-paste onto 1024x1024 canvas with pad color (245,245,245).
 
+    No image enhancement (CLAHE, sharpening, deskew) is applied because
+    the model was trained on raw letterboxed images. Altering the pixel
+    distribution at inference would cause train-test mismatch.
+
     Raises:
         InvalidImageError: If the image file is corrupted or unreadable.
     """

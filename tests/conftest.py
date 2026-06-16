@@ -5,8 +5,9 @@ import pytest
 
 @pytest.fixture
 def sample_ocr_output():
-    """Realistic model output dict (8-field schema)."""
+    """Realistic model output dict (extended schema with line_items)."""
     return {
+        "hospital_name": "Ospital ng Angeles",
         "date": "2026-01-15",
         "patient_name": "Tan Chay Yee",
         "philhealth_number": "21-210942992-0",
@@ -15,6 +16,10 @@ def sample_ocr_output():
         "total_amount": 193.00,
         "philhealth_benefit": 100.00,
         "balance_due": 93.00,
+        "line_items": [
+            {"description": "Complete Blood Count", "amount": 250.00},
+            {"description": "Urinalysis", "amount": 150.00},
+        ],
     }
 
 

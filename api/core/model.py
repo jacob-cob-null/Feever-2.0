@@ -21,12 +21,24 @@ from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 logger = logging.getLogger(__name__)
 
 EXTRACTION_PROMPT = (
-    "You are a document extraction assistant. Given the image of an invoice "
-    "or billing document, extract the following fields and return them as a "
-    "single JSON object with exactly these keys: date, patient_name, "
-    "philhealth_number, diagnosis_code, procedure_code, total_amount, "
-    "philhealth_benefit, balance_due. Use null for any field not present in "
-    "the document. Return only the JSON object — no explanation, no markdown."
+    "You are a medical document extraction assistant. "
+    "Given the image of a hospital billing statement or invoice, extract "
+    "the following fields and return them as a single JSON object.\n\n"
+    "Required keys:\n"
+    "- hospital_name: the name of the hospital or clinic (usually at the top/header)\n"
+    "- date: the billing or admission date\n"
+    "- patient_name: full name of the patient\n"
+    "- philhealth_number: PhilHealth member ID number (12 digits, may have dashes)\n"
+    "- diagnosis_code: ICD-10 diagnosis code (e.g. N20.9, I10)\n"
+    "- procedure_code: RVS procedure code (e.g. 36100, 90.5.0.10)\n"
+    "- total_amount: the total billed amount (number)\n"
+    "- philhealth_benefit: PhilHealth benefit/coverage amount (number)\n"
+    "- balance_due: remaining balance after PhilHealth (number)\n"
+    "- line_items: an array of individual charges from the billing table, "
+    "each with {\"description\": \"...\", \"amount\": ...}\n\n"
+    "Use null for any field not found in the document. "
+    "For line_items, return an empty array [] if no itemized charges are visible.\n"
+    "Return only the JSON object — no explanation, no markdown."
 )
 
 
@@ -141,7 +153,7 @@ class ModelManager:
         logger.info("Running warmup inference...")
         dummy = Image.new("RGB", (64, 64), (245, 245, 245))
         try:
-            self.run_inference(dummy)
+            self.run_inference(dummy, max_new_tokens=64)
         except Exception:
             logger.warning("Warmup inference produced no valid JSON (expected)")
         finally:
@@ -149,9 +161,19 @@ class ModelManager:
         logger.info("Warmup complete")
 
     def run_inference(
-        self, pil_image: Image.Image, max_new_tokens: int = 256
+        self, pil_image: Image.Image, max_new_tokens: int = 1024,
     ) -> tuple[dict, str, int]:
         """Run OCR inference on a PIL image.
+
+        The model uses Qwen3's built-in thinking mode (generates a
+        <think>...</think> reasoning block before the JSON answer).
+        This is how the model was fine-tuned — disabling it degrades
+        output quality. The think block is stripped before parsing.
+
+        Args:
+            pil_image: Normalized PIL image.
+            max_new_tokens: Max tokens to generate. Set high to accommodate
+                both the thinking block and the JSON output with line items.
 
         Returns:
             (parsed_dict, raw_text, parse_tier)
@@ -188,13 +210,28 @@ class ModelManager:
                 do_sample=False,
                 temperature=None,
                 top_p=None,
+                repetition_penalty=1.05,
             )
 
         generated = output_ids[0][inputs["input_ids"].shape[1]:]
         raw_text = self.processor.decode(generated, skip_special_tokens=True)
 
-        parsed, tier = self._parse_output(raw_text)
+        # Strip thinking block from output before parsing
+        clean_text = self._strip_thinking(raw_text)
+
+        parsed, tier = self._parse_output(clean_text)
         return parsed, raw_text, tier
+
+    @staticmethod
+    def _strip_thinking(text: str) -> str:
+        """Remove <think>...</think> block from model output."""
+        # Handle both complete and incomplete think blocks
+        stripped = re.sub(r"<think>[\s\S]*?</think>\s*", "", text, count=1)
+        if stripped.strip():
+            return stripped.strip()
+        # If stripping removed everything, the model put the answer inside
+        # the think block (shouldn't happen, but be safe)
+        return text.strip()
 
     def get_vram_info(self) -> tuple[int, int]:
         """Return (used_mb, total_mb) for the model's CUDA device."""
@@ -253,7 +290,7 @@ class ModelManager:
 
         # --- Tier 3: regex field extraction ---
         FIELDS = [
-            "date", "patient_name", "philhealth_number",
+            "hospital_name", "date", "patient_name", "philhealth_number",
             "diagnosis_code", "procedure_code", "total_amount",
             "philhealth_benefit", "balance_due",
         ]

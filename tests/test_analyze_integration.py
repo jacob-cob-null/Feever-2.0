@@ -17,6 +17,7 @@ def sample_model_output():
     """Realistic (dict, raw_text, parse_tier) return from run_inference."""
     return (
         {
+            "hospital_name": "Ospital ng Angeles",
             "date": "2026-01-15",
             "patient_name": "Tan Chay Yee",
             "philhealth_number": "21-210942992-0",
@@ -25,8 +26,12 @@ def sample_model_output():
             "total_amount": 193.00,
             "philhealth_benefit": 100.00,
             "balance_due": 93.00,
+            "line_items": [
+                {"description": "Complete Blood Count", "amount": 250.00},
+                {"description": "Urinalysis", "amount": 150.00},
+            ],
         },
-        '{"date":"2026-01-15","patient_name":"Tan Chay Yee","philhealth_number":"21-210942992-0","diagnosis_code":"N20.9","procedure_code":"36100","total_amount":193.00,"philhealth_benefit":100.00,"balance_due":93.00}',
+        '{"hospital_name":"Ospital ng Angeles","date":"2026-01-15","patient_name":"Tan Chay Yee","philhealth_number":"21-210942992-0","diagnosis_code":"N20.9","procedure_code":"36100","total_amount":193.00,"philhealth_benefit":100.00,"balance_due":93.00,"line_items":[{"description":"Complete Blood Count","amount":250.00},{"description":"Urinalysis","amount":150.00}]}',
         1,  # parse tier
     )
 
