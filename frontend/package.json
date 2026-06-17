@@ -1,0 +1,30 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:full": "concurrently -n backend,frontend -c blue,magenta \"npm run dev:backend\" \"next dev\"",
+    "dev:backend": "powershell -NoProfile -Command \"Set-Location ..; $env:TORCHDYNAMO_DISABLE='1'; $env:KMP_DUPLICATE_LIB_OK='TRUE'; & ./.venv311/Scripts/python.exe -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "framer-motion": "^12.40.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
