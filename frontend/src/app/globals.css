@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ── */
+:root {
+  --bg-page: #FAFAF8;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F7F7F5;
+  --border-subtle: #E5E5E3;
+  --border-medium: #D4D4D0;
+
+  --text-primary: #1A1A1A;
+  --text-secondary: #525250;
+  --text-tertiary: #8A8A87;
+  --text-inverse: #FAFAF8;
+
+  --accent-indigo: #3730A3;
+  --accent-indigo-light: #4F46E5;
+  --accent-indigo-subtle: #EEF2FF;
+
+  --severity-high: #B91C1C;
+  --severity-high-bg: #FEF2F2;
+  --severity-high-border: #FECACA;
+  --severity-medium: #B45309;
+  --severity-medium-bg: #FFFBEB;
+  --severity-medium-border: #FDE68A;
+  --severity-low: #475569;
+  --severity-low-bg: #F8FAFC;
+  --severity-low-border: #CBD5E1;
+
+  --confidence-high: #166534;
+  --confidence-high-bg: #F0FDF4;
+  --confidence-medium: #B45309;
+  --confidence-medium-bg: #FFFBEB;
+  --confidence-low: #B91C1C;
+  --confidence-low-bg: #FEF2F2;
+
+  --success: #166534;
+  --success-bg: #F0FDF4;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@theme inline {
+  --color-background: var(--bg-page);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* ── Base ── */
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent-indigo);
+  color: var(--text-inverse);
+}
+
+/* ── Animations ── */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
